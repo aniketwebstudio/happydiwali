@@ -26,7 +26,7 @@ font-size:clamp(15px,3.6vw,19px);line-height:1.6;font-style:italic;opacity:0;tra
 #dwc .diya.on .glow{opacity:1}
 #dwc .diya.on .flame{opacity:1;transform:scale(1);animation:dwcflick 1.3s ease-in-out .5s infinite alternate}
 @keyframes dwcflick{0%{transform:scale(1,1) skewX(0)}50%{transform:scale(.94,1.07) skewX(2deg)}100%{transform:scale(1.04,.96) skewX(-2deg)}}
-#dwc .hint{position:relative;margin:0;padding:0 16px 22px;font-size:14px;opacity:.75;transition:opacity .4s}
+#dwc .hint{position:relative;margin:0;padding:0 16px 22px;font-size:20px;opacity:1;transition:opacity .4s}
 #dwc .hint.warn{color:var(--gold);opacity:1}
 #dwc .sound{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:0;color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:17px;cursor:pointer}
 #dwc .sound:focus-visible,#dwc .diya:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
@@ -127,7 +127,7 @@ function lit(){return diyas.some(function(d){return d.classList.contains("on")})
 function light(d){
   if(d.classList.contains("on"))return;
   d.classList.add("on");snd("light");root.classList.add("lit");
-  hint.textContent=lit()&&diyas.every(function(x){return x.classList.contains("on")})?"All lit! Now double tap anywhere to launch a rocket":"Light more diyas, or double tap anywhere to launch a rocket";
+  hint.textContent=lit()&&diyas.every(function(x){return x.classList.contains("on")})?"YAYYYYYY!!!! All lit! Now double tap anywhere to launch a rocket":"Light more diyas, or double tap anywhere to launch a rocket";
 }
 function warn(){
   hint.textContent="Light a diya first, it lights the rocket fuse";hint.classList.add("warn");
