@@ -1,0 +1,149 @@
+<!-- Interactive Diwali Card: paste into a WordPress "Custom HTML" block, or upload as its own .html page. -->
+<div id="dwc">
+<style>
+#dwc{--ink:#0e1030;--ink2:#1c1650;--gold:#f6c453;--flame:#ff9a2e;--clay:#c2562b;--cream:#fff3d6;
+position:relative;width:100%;max-width:760px;height:100vh;height:100dvh;display:flex;flex-direction:column;margin:0 auto;overflow:hidden;border-radius:18px;
+background:radial-gradient(120% 80% at 50% 100%,var(--ink2),var(--ink) 70%);color:var(--cream);
+font-family:Georgia,"Times New Roman",serif;text-align:center;user-select:none;-webkit-user-select:none;
+touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;box-sizing:border-box}
+#dwc *{box-sizing:border-box}
+#dwc canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#dwc .stars{position:absolute;inset:0;pointer-events:none}
+#dwc .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.5}
+#dwc h2{position:relative;margin:0;padding:34px 16px 0;font-size:clamp(34px,8vw,64px);line-height:1.15;font-weight:700;letter-spacing:.02em;
+color:var(--gold);text-shadow:0 0 0 transparent;transition:text-shadow 1.2s,opacity 1.2s;opacity:.55}
+#dwc.lit h2{opacity:1;text-shadow:0 0 28px rgba(255,170,60,.65)}
+#dwc .msg{position:relative;width:min(86%,460px);margin:16px auto 0;
+font-size:clamp(15px,3.6vw,19px);line-height:1.6;font-style:italic;opacity:0;transition:opacity 1.4s .4s}
+#dwc.lit .msg{opacity:.95}
+#dwc .from{position:relative;margin:18px 16px 0;font-size:16px;color:var(--gold);opacity:0;transition:opacity 1.4s .9s}
+#dwc.lit .from{opacity:1}
+#dwc .row{position:relative;margin-top:auto;padding:24px 8px 18px;display:flex;justify-content:center;gap:clamp(14px,6vw,48px);align-items:flex-end}
+#dwc .diya{width:clamp(78px,22vw,130px);height:auto;overflow:visible;cursor:pointer}
+#dwc .diya:nth-child(2){transform:translateY(-14px) scale(1.12)}
+#dwc .glow{opacity:0;transition:opacity .8s}
+#dwc .flame{opacity:0;transform-origin:50px 46px;transform:scale(.2);transition:opacity .4s,transform .5s cubic-bezier(.3,1.6,.5,1)}
+#dwc .diya.on .glow{opacity:1}
+#dwc .diya.on .flame{opacity:1;transform:scale(1);animation:dwcflick 1.3s ease-in-out .5s infinite alternate}
+@keyframes dwcflick{0%{transform:scale(1,1) skewX(0)}50%{transform:scale(.94,1.07) skewX(2deg)}100%{transform:scale(1.04,.96) skewX(-2deg)}}
+#dwc .hint{position:relative;margin:0;padding:0 16px 22px;font-size:14px;opacity:.75;transition:opacity .4s}
+#dwc .hint.warn{color:var(--gold);opacity:1}
+#dwc .sound{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:0;color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:17px;cursor:pointer}
+#dwc .sound:focus-visible,#dwc .diya:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+#dwc h2,#dwc .msg,#dwc .from{overflow-wrap:anywhere}
+@media (max-height:600px){#dwc h2{padding-top:16px;font-size:30px}#dwc .msg{margin-top:8px;font-size:14px}#dwc .from{margin-top:8px}#dwc .diya{width:64px}#dwc .row{padding-top:12px;padding-bottom:8px}#dwc .hint{padding-bottom:12px}}
+@media (prefers-reduced-motion:reduce){#dwc .diya.on .flame{animation:none}}
+</style>
+<div class="stars"></div>
+<canvas></canvas>
+<button class="sound" type="button" aria-label="Toggle sound">🔊</button>
+<h2></h2>
+<p class="msg"></p>
+<p class="from"></p>
+<div class="row"></div>
+<p class="hint">Tap a diya to light it</p>
+<script>
+(function(){
+/* ====== EDIT THESE ====== */
+var CONFIG={
+  title:"Happy Diwali",
+  message:"May this festival of lights fill your home with warmth, your heart with joy, and your year with new beginnings.",
+  from:"With love from Aniket"
+};
+/* ======================== */
+var root=document.getElementById("dwc"),cv=root.querySelector("canvas"),ctx=cv.getContext("2d");
+var hint=root.querySelector(".hint"),row=root.querySelector(".row"),W,H,dpr;
+root.querySelector("h2").textContent=CONFIG.title;
+root.querySelector(".msg").textContent=CONFIG.message;
+root.querySelector(".from").textContent=CONFIG.from;
+
+/* stars */
+var st=root.querySelector(".stars"),sh="";
+for(var i=0;i<60;i++)sh+='<i style="left:'+(Math.random()*100)+'%;top:'+(Math.random()*70)+'%;opacity:'+(.2+Math.random()*.6)+'"></i>';
+st.innerHTML=sh;
+
+/* diyas */
+var svg='<svg class="diya" viewBox="0 0 100 80" tabindex="0" role="button" aria-label="Light the diya">'+
+'<defs><radialGradient id="dwg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffb347" stop-opacity=".85"/><stop offset="1" stop-color="#ff7a00" stop-opacity="0"/></radialGradient>'+
+'<linearGradient id="dwb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0773a"/><stop offset="1" stop-color="#8f3418"/></linearGradient></defs>'+
+'<circle class="glow" cx="50" cy="40" r="62" fill="url(#dwg)"/>'+
+'<path class="flame" d="M50 14C58 26 62 34 50 47C38 34 42 26 50 14Z" fill="#ffd36b"/>'+
+'<path class="flame" d="M50 28C54 34 55 39 50 46C45 39 46 34 50 28Z" fill="#fff6d6"/>'+
+'<rect x="48.6" y="43" width="2.8" height="8" rx="1" fill="#3a1a0e"/>'+
+'<path d="M8 52C22 50 78 50 92 52C90 70 72 78 50 78C28 78 10 70 8 52Z" fill="url(#dwb)"/>'+
+'<path d="M8 52C22 50 78 50 92 52" stroke="#f6c453" stroke-width="2.5" fill="none"/>'+
+'<path d="M30 64C42 70 58 70 70 64" stroke="#f6c453" stroke-width="1.6" fill="none" opacity=".8"/></svg>';
+row.innerHTML=svg+svg+svg;
+var diyas=[].slice.call(row.querySelectorAll(".diya"));
+
+/* sound */
+var ac=null,muted=false;
+function audio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==="suspended")ac.resume();return ac}
+function noise(dur){var n=ac.sampleRate*dur,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;var s=ac.createBufferSource();s.buffer=b;return s}
+function snd(kind){
+  if(muted||!audio())return;var t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);
+  if(kind==="light"){var o=ac.createOscillator();o.type="sine";o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(990,t+.25);
+    g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.6);o.connect(g);o.start(t);o.stop(t+.6)}
+  if(kind==="whoosh"){var s=noise(.9),f=ac.createBiquadFilter();f.type="bandpass";f.frequency.setValueAtTime(500,t);f.frequency.exponentialRampToValueAtTime(3500,t+.85);
+    g.gain.setValueAtTime(.18,t);g.gain.linearRampToValueAtTime(0,t+.9);s.connect(f);f.connect(g);s.start(t)}
+  if(kind==="boom"){var s2=noise(1.2),f2=ac.createBiquadFilter();f2.type="lowpass";f2.frequency.setValueAtTime(1800,t);f2.frequency.exponentialRampToValueAtTime(120,t+1);
+    g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+1.2);s2.connect(f2);f2.connect(g);s2.start(t)}
+}
+root.querySelector(".sound").addEventListener("pointerdown",function(e){e.stopPropagation();muted=!muted;this.textContent=muted?"🔇":"🔊"});
+
+/* canvas */
+function size(){dpr=window.devicePixelRatio||1;W=root.clientWidth;H=root.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+size();window.addEventListener("resize",size);if(window.ResizeObserver)new ResizeObserver(size).observe(root);
+var rockets=[],parts=[],running=false,COLS=["#ffd36b","#ff7a2e","#ff4d6d","#7be0ff","#b58cff","#8affb0","#fff6d6"];
+function burst(x,y){
+  var c1=COLS[Math.random()*COLS.length|0],c2=COLS[Math.random()*COLS.length|0],n=90;
+  for(var i=0;i<n;i++){var a=Math.PI*2*i/n,sp=1.5+Math.random()*3.6;
+    parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,d:.008+Math.random()*.01,c:i%2?c1:c2,r:1.4+Math.random()*1.4})}
+}
+function launch(x){
+  rockets.push({x:x,y:H-60,ty:H*(.14+Math.random()*.28),vy:-7-Math.random()*2,t:[]});
+  snd("whoosh");run();
+}
+function frame(){
+  ctx.globalCompositeOperation="destination-out";ctx.fillStyle="rgba(0,0,0,.22)";ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation="lighter";
+  rockets=rockets.filter(function(r){
+    r.y+=r.vy;r.x+=Math.sin(r.y*.05)*.6;r.t.push([r.x,r.y]);if(r.t.length>14)r.t.shift();
+    for(var i=0;i<r.t.length;i++){ctx.fillStyle="rgba(255,170,60,"+(i/r.t.length*.8)+")";ctx.beginPath();ctx.arc(r.t[i][0],r.t[i][1],1+i/r.t.length*2,0,6.3);ctx.fill()}
+    ctx.fillStyle="#fff6d6";ctx.beginPath();ctx.arc(r.x,r.y,3,0,6.3);ctx.fill();
+    if(r.y<=r.ty){burst(r.x,r.y);snd("boom");return false}return true});
+  parts=parts.filter(function(p){
+    p.x+=p.vx;p.y+=p.vy;p.vx*=.985;p.vy=p.vy*.985+.045;p.life-=p.d;
+    if(p.life<=0)return false;
+    ctx.globalAlpha=p.life;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.3);ctx.fill();ctx.globalAlpha=1;return true});
+  if(rockets.length||parts.length)requestAnimationFrame(frame);
+  else{running=false;ctx.clearRect(0,0,W,H)}
+}
+function run(){if(!running){running=true;requestAnimationFrame(frame)}}
+
+/* interaction: tap = light diya, double tap = rocket */
+var lastT=0,lastX=0,lastY=0,warnTimer;
+function lit(){return diyas.some(function(d){return d.classList.contains("on")})}
+function light(d){
+  if(d.classList.contains("on"))return;
+  d.classList.add("on");snd("light");root.classList.add("lit");
+  hint.textContent=lit()&&diyas.every(function(x){return x.classList.contains("on")})?"All lit! Now double tap anywhere to launch a rocket":"Light more diyas, or double tap anywhere to launch a rocket";
+}
+function warn(){
+  hint.textContent="Light a diya first, it lights the rocket fuse";hint.classList.add("warn");
+  clearTimeout(warnTimer);warnTimer=setTimeout(function(){hint.classList.remove("warn")},2200);
+}
+root.addEventListener("pointerdown",function(e){
+  audio();
+  var r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,now=Date.now();
+  var dbl=now-lastT<330&&Math.abs(x-lastX)<40&&Math.abs(y-lastY)<40;
+  var d=e.target.closest&&e.target.closest(".diya");
+  if(dbl){lastT=0;lit()?launch(x):warn();return}
+  lastT=now;lastX=x;lastY=y;
+  if(d)light(d);
+});
+root.addEventListener("dblclick",function(e){e.preventDefault()});
+diyas.forEach(function(d){d.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();light(d)}})});
+})();
+</script>
+</div>
